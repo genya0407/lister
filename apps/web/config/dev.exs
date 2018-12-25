@@ -73,3 +73,5 @@ config :web, Web.Repo,
   database: "web_dev",
   hostname: "127.0.0.1",
   pool_size: 10
+
+import_config "twitter_keys.exs"

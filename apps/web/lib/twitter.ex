@@ -23,10 +23,9 @@ defmodule Twitter.Cache do
 end
 
 defmodule Twitter.Read do
-  def list_members(params = %{slug: slug, owner_id_or_screen_name: id}) do
+  def list_members(params = %{slug: slug, owner_screen_name: owner_screen_name}) do
     Twitter.Cache.query_or_exec(:list_members, params, fn ->
-      screen_name = user(%{id_or_screen_name: id}).screen_name
-      ExTwitter.list_members(slug, screen_name, count: 5000)
+      ExTwitter.list_members(slug, owner_screen_name, count: 5000)
     end)
   end
 
@@ -44,17 +43,28 @@ defmodule Twitter.Read do
 end
 
 defmodule Twitter.Write do
-  def add_to_list(owner_id, slug, user_ids) do
+  def add_to_list(owner_screen_name, slug, user_ids) do
     user_id = user_ids |> Enum.join(",")
+    owner = Twitter.Read.user(%{id_or_screen_name: owner_screen_name})
 
     params =
       ExTwitter.Parser.parse_request_params(
-        owner_id: owner_id,
+        owner_id: owner.id,
         slug: slug,
         user_id: user_id
       )
 
     ExTwitter.request(:post, "1.1/lists/members/create_all.json", params)
+
+    members =
+      Twitter.Read.list_members(%{owner_screen_name: owner.screen_name, slug: slug}) ++
+        Twitter.attach_profile(user_ids)
+
+    Twitter.Cache.store(
+      :list_members,
+      %{slug: slug, owner_screen_name: owner.screen_name},
+      members
+    )
   end
 end
 

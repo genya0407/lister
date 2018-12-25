@@ -22,6 +22,6 @@ defmodule WebWeb.Router do
   scope "/api", WebWeb do
     pipe_through :api
 
-    get "/candidates", CandidateController, :index
+    resources "/candidates", CandidateController
   end
 end
