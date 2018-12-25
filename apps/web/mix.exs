@@ -24,7 +24,7 @@ defmodule Web.MixProject do
   def application do
     [
       mod: {Web.Application, []},
-      extra_applications: [:logger, :runtime_tools]
+      extra_applications: [:logger, :runtime_tools, :extwitter]
     ]
   end
 
@@ -37,7 +37,6 @@ defmodule Web.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
-      {:twittercluster, in_umbrella: true},
       {:phoenix, "~> 1.4.0"},
       {:phoenix_pubsub, "~> 1.1"},
       {:phoenix_ecto, "~> 4.0"},
@@ -48,8 +47,12 @@ defmodule Web.MixProject do
       {:gettext, "~> 0.11"},
       {:jason, "~> 1.0"},
       {:plug_cowboy, "~> 2.0"},
+      {:oauther, "~> 1.1"},
+      {:combination, "~> 0.0.3"},
       {:extwitter, "~> 0.8"},
-      {:poison, "~> 3.1"}
+      {:flow, "~> 0.14"},
+      {:poison, "~> 3.1"},
+      {:cachex, "~> 3.1"}
     ]
   end
 

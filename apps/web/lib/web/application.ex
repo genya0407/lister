@@ -4,6 +4,7 @@ defmodule Web.Application do
   @moduledoc false
 
   use Application
+  import Supervisor.Spec
 
   def start(_type, _args) do
     # List all child processes to be supervised
@@ -11,9 +12,10 @@ defmodule Web.Application do
       # Start the Ecto repository
       Web.Repo,
       # Start the endpoint when the application starts
-      WebWeb.Endpoint
+      WebWeb.Endpoint,
       # Starts a worker by calling: Web.Worker.start_link(arg)
       # {Web.Worker, arg},
+      worker(Cachex, [:twitter_cache, []])
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
