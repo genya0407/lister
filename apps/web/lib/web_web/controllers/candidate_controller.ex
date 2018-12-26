@@ -16,11 +16,14 @@ defmodule WebWeb.CandidateController do
       |> MapSet.difference(list_member_ids |> MapSet.new())
       |> Enum.to_list()
       |> Twitter.attach_profile()
-      |> Enum.map(fn u ->
-        %{id: Integer.to_string(u.id), screen_name: u.screen_name, name: u.name}
-      end)
+      |> Enum.map(&Map.from_struct/1)
 
-    json(conn, %{"candidates" => candidates})
+    list_members =
+      list_member_ids
+      |> Twitter.attach_profile()
+      |> Enum.map(&Map.from_struct/1)
+
+    json(conn, %{"candidates" => candidates, "list_members" => list_members})
   end
 
   def create(conn, %{
@@ -28,9 +31,17 @@ defmodule WebWeb.CandidateController do
         "slug" => slug,
         "user_ids" => user_ids
       }) do
-    user_ids = user_ids |> Enum.map(&String.to_integer/1)
+    user_ids = user_ids |> Enum.map(&coerce_integer/1)
     Twitter.Write.add_to_list(owner_screen_name, slug, user_ids)
 
     json(conn, %{"msg" => "success"})
+  end
+
+  defp coerce_integer(s) do
+    if is_binary(s) do
+      String.to_integer(s)
+    else
+      s
+    end
   end
 end
