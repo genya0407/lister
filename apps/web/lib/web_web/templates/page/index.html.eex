@@ -11,35 +11,29 @@
     <div id='main'>
       <div class="container">
         <div class='row'>
-          <div class='col-lg-3'>
-            <user-viewer v-for='user in hint_users' v-bind:user='user' v-bind:id="`hint_${user.id}`"></user-viewer>
+          <div class='col-lg-4'>
+            <user-viewer
+              v-for='user in hint_users'
+              v-bind:user='user'
+              v-bind:id="`hint_${user.id}`"
+            ></user-viewer>
             <input type="text" v-model="new_hint" />
             <button v-on:click="add_hint">Add hint</button>
-
-            <br />
             <button v-on:click="fetch_candidates">Fetch candidates</button>
           </div>
-          <div class='col-lg-3'>
+          <div class='col-lg-4'>
+            <user-viewer
+              v-for='user in candidates'
+              v-bind:user='user'
+              v-bind:action-component='"candidate-action"'
+            ></user-viewer>
           </div>
-          <div class='col-lg-3'>
-            <div class='row' v-for='user in candidates' style='margin-bottom: 10px; margin-top:10px;'>
-              <div class='col-lg-2' style='padding: 0px;'>
-                <img class='img-thumbnail' v-bind:src='user.profile_image_url_https' style='width: 48px; height: 48px;'>
-              </div>
-              <div class='col-lg-10'>
-                <div class='card-body' style='padding: 0px;'>
-                  <p style='margin: 0px;'>
-                    {{ user.name }}(@{{ user.screen_name }})
-                  </p>
-                  <p style='margin: 0px;'>
-                    <button v-on:click="add_to_list(user.id_str)" class="btn btn-outline-primary" style='padding: 2px;'> Add </button>
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class='col-lg-3'>
-            <user-viewer v-for='user in list_members' v-bind:user='user'></user-viewer>
+          <div class='col-lg-4'>
+            <user-viewer
+              v-for='user in list_members'
+              v-bind:user='user'
+              v-bind:action-component='"list-member-action"'
+            ></user-viewer>
           </div>
         </div>
       </div>
@@ -51,9 +45,9 @@
     <script src="https://cdn.jsdelivr.net/npm/vue@2.5.17/dist/vue.js"></script>
     <script type='text/javascript'>
       Vue.component('user-viewer', {
-        props: ["user", "actionComponent"],
+        props: ["user", "action-component"],
         template: `
-        <div class='row' style='margin-bottom: 10px; margin-top:10px;'>
+        <div class='row' style='margin: 20px;'>
           <div class='col-lg-2' style='padding: 0px;'>
             <img class='img-thumbnail' v-bind:src='user.profile_image_url_https' style='width: 48px; height: 48px;'>
           </div>
@@ -66,6 +60,38 @@
             </div>
           </div>
         </div>
+        `,
+        methods: {
+          add_to_list: function(arg) { this.$parent.add_to_list(arg) }
+        }
+      })
+
+      Vue.component('candidate-action', {
+        props: ['user'],
+        template: `
+        <p style='margin: 0px;' class='text-right'>
+          <button
+            v-on:click="add_to_list(user.id_str)"
+            class="btn btn-outline-primary"
+            style='padding: 2px;'
+          >Add</button>
+        </p>
+        `,
+        methods: {
+          add_to_list: function(arg) { this.$parent.add_to_list(arg) }
+        }
+      })
+
+      Vue.component('list-member-action', {
+        props: ['user'],
+        template: `
+        <p style='margin: 0px;'>
+          <button
+            v-on:click="remove_from_list(user.id_str)"
+            class="btn btn-outline-danger"
+            style='padding: 2px;'
+          >Del</button>
+        </p>
         `
       })
 
