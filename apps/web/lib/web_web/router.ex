@@ -24,5 +24,7 @@ defmodule WebWeb.Router do
 
     resources "/candidates", CandidateController
     get "/user", CandidateController, :user
+    post "/list_members", CandidateController, :add_to_list
+    delete "/list_members", CandidateController, :remove_from_list
   end
 end

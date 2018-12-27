@@ -26,7 +26,7 @@ defmodule WebWeb.CandidateController do
     json(conn, %{"candidates" => candidates, "list_members" => list_members})
   end
 
-  def create(conn, %{
+  def add_to_list(conn, %{
         "owner_screen_name" => owner_screen_name,
         "slug" => slug,
         "user_ids" => user_ids
@@ -41,6 +41,17 @@ defmodule WebWeb.CandidateController do
     user = Twitter.Read.user(%{id_or_screen_name: identifier})
 
     conn |> json(Map.from_struct(user))
+  end
+
+  def remove_from_list(conn, %{
+        "owner_screen_name" => owner_screen_name,
+        "slug" => slug,
+        "user_ids" => user_ids
+      }) do
+    user_ids = user_ids |> Enum.map(&coerce_integer/1)
+    Twitter.Write.remove_from_list(owner_screen_name, slug, user_ids)
+
+    json(conn, %{"msg" => "success"})
   end
 
   defp coerce_integer(s) do

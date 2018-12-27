@@ -66,6 +66,30 @@ defmodule Twitter.Write do
       members
     )
   end
+
+  def remove_from_list(owner_screen_name, slug, user_ids) do
+    user_id = user_ids |> Enum.join(",")
+    owner = Twitter.Read.user(%{id_or_screen_name: owner_screen_name})
+
+    params =
+      ExTwitter.Parser.parse_request_params(
+        owner_id: owner.id,
+        slug: slug,
+        user_id: user_id
+      )
+
+    ExTwitter.request(:post, "1.1/lists/members/destroy_all.json", params)
+
+    members =
+      Twitter.Read.list_members(%{owner_screen_name: owner.screen_name, slug: slug})
+      |> Enum.reject(fn user -> Enum.member?(user_ids, user.id) end)
+
+    Twitter.Cache.store(
+      :list_members,
+      %{slug: slug, owner_screen_name: owner.screen_name},
+      members
+    )
+  end
 end
 
 defmodule Twitter do

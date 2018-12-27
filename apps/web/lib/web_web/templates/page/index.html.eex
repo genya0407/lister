@@ -16,6 +16,7 @@
               v-for='user in hint_users'
               v-bind:user='user'
               v-bind:id="`hint_${user.id}`"
+              v-bind:action-component='"hint-action"'
             ></user-viewer>
             <input type="text" v-model="new_hint" />
             <button v-on:click="add_hint">Add hint</button>
@@ -62,7 +63,9 @@
         </div>
         `,
         methods: {
-          add_to_list: function(arg) { this.$parent.add_to_list(arg) }
+          add_to_list: function(arg) { this.$parent.add_to_list(arg) },
+          remove_from_list: function(arg) { this.$parent.remove_from_list(arg) },
+          remove_from_hints: function(arg) { this.$parent.remove_from_hints(arg) }
         }
       })
 
@@ -78,7 +81,7 @@
         </p>
         `,
         methods: {
-          add_to_list: function(arg) { this.$parent.add_to_list(arg) }
+          add_to_list: function(arg) { this.$parent.add_to_list(arg) },
         }
       })
 
@@ -92,7 +95,28 @@
             style='padding: 2px;'
           >Del</button>
         </p>
-        `
+        `,
+        methods: {
+          remove_from_list: function(arg) { this.$parent.remove_from_list(arg) }
+        }
+      })
+
+      Vue.component('hint-action', {
+        props: ['user'],
+        template: `
+        <p style='margin: 0px;'>
+          <button
+            v-on:click="remove_from_hints(user.screen_name)"
+            class="btn btn-outline-danger"
+            style='padding: 2px;'
+          >Del</button>
+        </p>
+        `,
+        methods: {
+          remove_from_hints: function(arg) {
+            this.$parent.remove_from_hints(arg)
+          }
+        }
       })
 
       const app = new Vue({
@@ -119,7 +143,7 @@
           add_to_list: function(user_id) {
             const vue = this
             $.ajax({
-              url: "/api/candidates",
+              url: "/api/list_members",
               type: "POST",
               data: JSON.stringify({user_ids: [user_id], owner_screen_name: vue.owner_screen_name, slug: vue.slug}),
               contentType:"application/json; charset=utf-8",
@@ -127,6 +151,24 @@
               success: function(){
                 vue.fetch_candidates()
               }
+            })
+          },
+          remove_from_list: function(user_id) {
+            const vue = this
+            $.ajax({
+              url: "/api/list_members",
+              type: "DELETE",
+              data: JSON.stringify({user_ids: [user_id], owner_screen_name: vue.owner_screen_name, slug: vue.slug}),
+              contentType:"application/json; charset=utf-8",
+              dataType:"json",
+              success: function(){
+                vue.fetch_candidates()
+              }
+            })
+          },
+          remove_from_hints: function(user_screen_name) {
+            this.hint_user_screen_names = this.hint_user_screen_names.filter((sn) => {
+              return sn !== user_screen_name
             })
           },
           add_hint: function() {
