@@ -23,5 +23,6 @@ defmodule WebWeb.Router do
     pipe_through :api
 
     resources "/candidates", CandidateController
+    get "/user", CandidateController, :user
   end
 end

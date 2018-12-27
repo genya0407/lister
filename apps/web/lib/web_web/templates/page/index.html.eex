@@ -9,21 +9,40 @@
   </head>
   <body>
     <div id='main'>
-      <ul>
-        <li v-for="candidate in candidates">
-          {{ candidate.screen_name }}: {{candidate.name}}
-          <button v-on:click="add_to_list(candidate.id)">Add</button>
-        </li>
-      </ul>
+      <div class="container">
+        <div class='row'>
+          <div class='col-lg-3'>
+            <user-viewer v-for='user in hint_users' v-bind:user='user' v-bind:id="`hint_${user.id}`"></user-viewer>
+            <input type="text" v-model="new_hint" />
+            <button v-on:click="add_hint">Add hint</button>
 
-      <ul>
-        <li v-for="hint in hint_user_screen_names">{{ hint }}</li>
-      </ul>
-      <input type="text" v-model="new_hint" />
-      <button v-on:click="add_hint">Add hint</button>
-
-      <br />
-      <button v-on:click="fetch_candidates">Fetch candidates</button>
+            <br />
+            <button v-on:click="fetch_candidates">Fetch candidates</button>
+          </div>
+          <div class='col-lg-3'>
+          </div>
+          <div class='col-lg-3'>
+            <div class='row' v-for='user in candidates' style='margin-bottom: 10px; margin-top:10px;'>
+              <div class='col-lg-2' style='padding: 0px;'>
+                <img class='img-thumbnail' v-bind:src='user.profile_image_url_https' style='width: 48px; height: 48px;'>
+              </div>
+              <div class='col-lg-10'>
+                <div class='card-body' style='padding: 0px;'>
+                  <p style='margin: 0px;'>
+                    {{ user.name }}(@{{ user.screen_name }})
+                  </p>
+                  <p style='margin: 0px;'>
+                    <button v-on:click="add_to_list(user.id_str)" class="btn btn-outline-primary" style='padding: 2px;'> Add </button>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class='col-lg-3'>
+            <user-viewer v-for='user in list_members' v-bind:user='user'></user-viewer>
+          </div>
+        </div>
+      </div>
     </div>
 
     <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
@@ -31,15 +50,36 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/js/bootstrap.min.js" integrity="sha384-uefMccjFJAIv6A+rW+L4AHf99KvxDjWSu1z9VI8SKNVmz4sk7buKt/6v9KI65qnm" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue@2.5.17/dist/vue.js"></script>
     <script type='text/javascript'>
+      Vue.component('user-viewer', {
+        props: ["user", "actionComponent"],
+        template: `
+        <div class='row' style='margin-bottom: 10px; margin-top:10px;'>
+          <div class='col-lg-2' style='padding: 0px;'>
+            <img class='img-thumbnail' v-bind:src='user.profile_image_url_https' style='width: 48px; height: 48px;'>
+          </div>
+          <div class='col-lg-10'>
+            <div class='card-body' style='padding: 0px;'>
+              <p style='margin: 0px;'>
+                {{ user.name }}(@{{ user.screen_name }})
+              </p>
+              <component v-bind:is='actionComponent' v-bind:user='user'></component>
+            </div>
+          </div>
+        </div>
+        `
+      })
+
       const app = new Vue({
         el: '#main',
         data: function(){
           return {
             new_hint: "",
-            hint_user_screen_names: [],
+            hint_user_screen_names: ["genya0407", "motterian"],
+            hint_users: [],
             owner_screen_name: "genya0407",
             slug: "r",
-            candidates: []
+            candidates: [],
+            list_members: []
           }
         },
         methods: {
@@ -47,6 +87,7 @@
             const vue = this
             $.get("/api/candidates", {hints: vue.hints, owner_screen_name: vue.owner_screen_name, slug: vue.slug}, (data) => {
               vue.candidates = data.candidates
+              vue.list_members = data.list_members
             })
           },
           add_to_list: function(user_id) {
@@ -71,6 +112,23 @@
           hints: function() {
             return this.hint_user_screen_names.join(",")
           }
+        },
+        watch: {
+          hint_user_screen_names: function() {
+            this.hint_users = []
+            this.hint_user_screen_names.forEach((screen_name) => {
+              $.get('/api/user', { user_screen_name_or_id: screen_name }, (data) => {
+                this.hint_users.push(data)
+              })
+            })
+          }
+        },
+        mounted: function () {
+          this.$nextTick(() => {
+            this.hint_user_screen_names = this.hint_user_screen_names.map((u) => {
+              return u
+            })
+          })
         }
       })
     </script>

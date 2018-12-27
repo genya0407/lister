@@ -37,6 +37,12 @@ defmodule WebWeb.CandidateController do
     json(conn, %{"msg" => "success"})
   end
 
+  def user(conn, %{"user_screen_name_or_id" => identifier}) do
+    user = Twitter.Read.user(%{id_or_screen_name: identifier})
+
+    conn |> json(Map.from_struct(user))
+  end
+
   defp coerce_integer(s) do
     if is_binary(s) do
       String.to_integer(s)
