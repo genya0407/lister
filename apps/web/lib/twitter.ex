@@ -20,6 +20,14 @@ defmodule Twitter.Cache do
       Cachex.put(cache, %{func_name: func_name, params: params}, result)
     end)
   end
+
+  def store_bulk(func_name, values) do
+    pairs =
+      values
+      |> Enum.map(fn {params, result} -> {%{func_name: func_name, params: params}, result} end)
+
+    Cachex.put_many(:twitter_cache, pairs)
+  end
 end
 
 defmodule Twitter.Read do
@@ -33,6 +41,38 @@ defmodule Twitter.Read do
     Twitter.Cache.query_or_exec(:user, params, fn ->
       ExTwitter.user(value)
     end)
+  end
+
+  def users(user_identifiers) do
+    user_identifiers
+    |> Enum.filter(fn user_identifier ->
+      case Twitter.Cache.query(:user, %{id_or_screen_name: user_identifier}) do
+        {:ok, nil} -> true
+        {:ok, _} -> false
+      end
+    end)
+    |> Enum.chunk_every(100)
+    |> Enum.map(fn chunked_user_identifiers ->
+      ExTwitter.user_lookup(chunked_user_identifiers)
+      |> Enum.map(fn user ->
+        [
+          {%{id_or_screen_name: user.id}, user},
+          {%{id_or_screen_name: user.screen_name}, user}
+        ]
+      end)
+      |> Enum.concat()
+    end)
+    |> Enum.concat()
+    |> IO.inspect()
+    |> (&Twitter.Cache.store_bulk(:user, &1)).()
+
+    result =
+      user_identifiers
+      |> Enum.map(fn user_identifier ->
+        Twitter.Read.user(%{id_or_screen_name: user_identifier})
+      end)
+
+    result
   end
 
   def friend_ids(params = %{id: user_id}) do
@@ -58,7 +98,7 @@ defmodule Twitter.Write do
 
     members =
       Twitter.Read.list_members(%{owner_screen_name: owner.screen_name, slug: slug}) ++
-        Twitter.attach_profile(user_ids)
+        Twitter.Read.users(user_ids)
 
     Twitter.Cache.store(
       :list_members,
@@ -93,19 +133,12 @@ defmodule Twitter.Write do
 end
 
 defmodule Twitter do
-  def friends_intersection(users) do
-    users
-    |> Enum.map(fn u -> Twitter.Read.user(%{id_or_screen_name: u}).id end)
-    |> Enum.map(fn uid ->
-      Twitter.Read.friend_ids(%{id: uid}) |> MapSet.new()
+  def friends_intersection(user_identifiers) do
+    user_identifiers
+    |> Twitter.Read.users()
+    |> Enum.map(fn u ->
+      Twitter.Read.friend_ids(%{id: u.id}) |> MapSet.new()
     end)
     |> Enum.reduce(fn m1, m2 -> MapSet.intersection(m1, m2) end)
-  end
-
-  def attach_profile(user_ids) do
-    user_ids
-    |> Flow.from_enumerable()
-    |> Flow.map(&Twitter.Read.user(%{id_or_screen_name: &1}))
-    |> Enum.to_list()
   end
 end

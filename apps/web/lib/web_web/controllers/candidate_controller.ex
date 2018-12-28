@@ -2,11 +2,14 @@ defmodule WebWeb.CandidateController do
   use WebWeb, :controller
 
   def index(conn, %{"owner_screen_name" => owner_screen_name, "slug" => slug, "hints" => hints}) do
-    list_member_ids =
+    list_members =
       Twitter.Read.list_members(%{
         owner_screen_name: owner_screen_name,
         slug: slug
       })
+
+    list_member_ids =
+      list_members
       |> Enum.map(& &1.id)
 
     candidates =
@@ -15,15 +18,13 @@ defmodule WebWeb.CandidateController do
       |> Twitter.friends_intersection()
       |> MapSet.difference(list_member_ids |> MapSet.new())
       |> Enum.to_list()
-      |> Twitter.attach_profile()
+      |> Twitter.Read.users()
       |> Enum.map(&Map.from_struct/1)
 
-    list_members =
-      list_member_ids
-      |> Twitter.attach_profile()
-      |> Enum.map(&Map.from_struct/1)
-
-    json(conn, %{"candidates" => candidates, "list_members" => list_members})
+    json(conn, %{
+      "candidates" => candidates,
+      "list_members" => list_members |> Enum.map(&Map.from_struct/1)
+    })
   end
 
   def add_to_list(conn, %{
