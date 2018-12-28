@@ -32,7 +32,7 @@
               v-bind:action-component='"hint-action"'
             ></user-viewer>
             <input type="text" v-model="new_hint" />
-            <button v-on:click="add_hint">Add hint</button>
+            <button v-on:click="add_new_hint">Add hint</button>
             <button v-on:click="fetch_candidates">Fetch candidates</button>
           </div>
           <div class='col-lg-4'>
@@ -46,7 +46,8 @@
             </div>
           </div>
           <div class='col-lg-4'>
-            <h3 class='text-center'>List Members</h3>
+            <h4 class='text-center'>{{owner_screen_name}}/{{slug}}</h4>
+            List name: <input type='text' v-model='slug'>
             <div class='scrollable'>
               <user-viewer
                 v-for='user in list_members'
@@ -82,6 +83,7 @@
         </div>
         `,
         methods: {
+          add_to_hint: function(arg) { this.$parent.add_to_hint(arg) },
           add_to_list: function(arg) { this.$parent.add_to_list(arg) },
           remove_from_list: function(arg) { this.$parent.remove_from_list(arg) },
           remove_from_hints: function(arg) { this.$parent.remove_from_hints(arg) }
@@ -96,10 +98,16 @@
             v-on:click="add_to_list(user.id_str)"
             class="btn btn-outline-primary"
             style='padding: 2px;'
-          >Add</button>
+          >Add to List</button>
+          <button
+            v-on:click="add_to_hint(user.screen_name)"
+            class="btn btn-outline-success"
+            style='padding: 2px;'
+          >Add to Hint</button>
         </p>
         `,
         methods: {
+          add_to_hint: function(arg) { this.$parent.add_to_hint(arg) },
           add_to_list: function(arg) { this.$parent.add_to_list(arg) },
         }
       })
@@ -113,9 +121,15 @@
             class="btn btn-outline-danger"
             style='padding: 2px;'
           >Del</button>
+          <button
+            v-on:click="add_to_hint(user.screen_name)"
+            class="btn btn-outline-success"
+            style='padding: 2px;'
+          >Add to Hint</button>
         </p>
         `,
         methods: {
+          add_to_hint: function(arg) { this.$parent.add_to_hint(arg) },
           remove_from_list: function(arg) { this.$parent.remove_from_list(arg) }
         }
       })
@@ -172,6 +186,9 @@
               }
             })
           },
+          add_to_hint: function(screen_name) {
+            this.hint_user_screen_names.push(screen_name)
+          },
           remove_from_list: function(user_id) {
             const vue = this
             $.ajax({
@@ -190,8 +207,8 @@
               return sn !== user_screen_name
             })
           },
-          add_hint: function() {
-            this.hint_user_screen_names.push(this.new_hint)
+          add_new_hint: function() {
+            this.add_to_hint(this.new_hint)
             this.new_hint = ""
           }
         },
